@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>coffee shop locator</title>
+  <link href="https://fonts.googleapis.com/css?family=Droid+Sans" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body onLoad='callFoursqaureApi()'>
+  <div id="overlay"><div class="inside"><div class="cell"><img src="images/Disk.svg"></div></div></div>
+  <div class="venue">
+    <p id='naslov'></p>
+    <div class="slideshow" id="slideshow">
+      <span class="prev"></span>
+      <span class="next"></span>
+    </div>  
+    <div id="venueAddress"></div>
+    <div class="clear"></div>
+    <p><a href="index.html">Back</a></p>
+  </div>
+
+<script>
+    function getParameterByName(name) {
+      var url = window.location.href;
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+    var id = getParameterByName("id");
+    var distance = getParameterByName("distance");
+    function callFoursqaureApi(){
+      var xhttp = new XMLHttpRequest();
+      var uri = "https://api.foursquare.com/v2/venues/"+id+"?client_secret=Y2CVKITXUP1L0BS3JCTWYQ0EMQMHCRROTFP0H0KJ4GACIRZN&client_id=PGRM0YMX3I1VA31XHY2ALTXJUUDVRLW2EJX0V1W4SNU4PVD1&v=20170826&venuePhotos=10";
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = JSON.parse(this.responseText);
+          parseResult(response.response.venue);
+        }
+      };
+      xhttp.open("GET", uri, true);
+      xhttp.send();
+    }
+    function getPhotos(groups){
+      var photos = [];
+      var size = "1024";
+      for(var i=0;i<groups.length;i++){
+        var group = groups[i];
+        var top10Photos = group.items.splice(0,10);
+        for(var j=0;j<top10Photos.length;j++){
+          var image = top10Photos[j].prefix + size + top10Photos[j].suffix;
+          photos.push(image);
+        }
+      }
+      return photos;
+    }
+    function parseResult(result){
+var venueName = result.name; // get name
+var venueAddress = result.location.address;
+var venuePriceRange = result.price == undefined ? 'Unknown' : result.price.message;
+document.getElementById('naslov').innerHTML = '<h1>'+ venueName + '</h1>';
+document.getElementById('venueAddress').innerHTML += '<p><i class="fa fa-address-card" aria-hidden="true"></i> ' + venueAddress + '</p>';
+document.getElementById('venueAddress').innerHTML += '<p>$ ' + venuePriceRange + '</p>';
+document.getElementById('venueAddress').innerHTML += '<p><i class="fa fa-dot-circle-o" aria-hidden="true"></i> ' + distance + 'm</p>';
+
+var photos = getPhotos(result.photos.groups); // get photos
+for(var i in photos){
+  document.getElementById('slideshow').innerHTML += '<figure><img src="' + photos[i] + '"/></figure>';
+
+}
+
+
+
+
+console.log(result);
+setTimeout( function(){ var overlay = document.getElementById('overlay'); overlay.parentNode.removeChild(overlay); }, 500); startSlideshow();// removes prelaoder
+}
+
+function startSlideshow(){
+// click or touchstart
+var clk =((document.ontouchstart!==null)?'click':'touchstart'),
+counter = 0, 
+// all figures
+figures = document.querySelectorAll('.slideshow figure'),
+// make slice
+items = Array.prototype.slice.call(figures);
+
+// add class show first element
+// good for php loop
+items[0].classList.add('show');
+
+// auto on click stop this
+var auto = setInterval(function(){
+  counter++;
+  _current(items);
+},5000);
+// add click events to prev & next buttons 
+_('.next').addEventListener(clk, function(){
+  counter++;
+  _current(items);
+  clearInterval(auto);
+});
+_('.prev').addEventListener(clk, function(){
+  counter--;
+  _current(items);
+  clearInterval(auto);
+});
+/*
+*  short queryselector function
+* -------------------------------------------------------*/
+function _(el){
+  return document.querySelector(el);
+}
+/*
+*  current function
+* -------------------------------------------------------*/
+function _current(elem){
+  var numItems = elem.length,
+  itemToShow = Math.abs(counter%numItems);
+  Array.prototype.forEach.call(elem,function(obj,index){
+    obj.classList.remove('show');
+  })
+  elem[itemToShow].classList.add('show');  
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html >
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<title>coffee shop locator</title>
+	<link href="https://fonts.googleapis.com/css?family=Droid+Sans" rel="stylesheet">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div id="overlay"><div class="inside"><div class="cell"><img src="images/Disk.svg"></div></div></div>
+	<div id="rezultati">
+		<div class="rTable mob"><div class="rTableRow"><div class="rTableCell"><p>Name</p></div><div class="rTableCell"><p>Address</a></p></div><div class="rTableCell"><p>Price</p></div><div class="rTableCell"><p>Distance</p></div></div></div>
+	</div>
+	<script>
+		var div = document.getElementById('rezultati');
+		function initMap() {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var pos = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
+					callFoursqaureApi(pos);
+				}, function() {
+					handleError(1);
+				});
+			} else {
+				handleError(2);
+			}
+		}
+		function callFoursqaureApi(pos){
+			var xhttp = new XMLHttpRequest();
+			var uri = "https://api.foursquare.com/v2/venues/explore?client_secret=Y2CVKITXUP1L0BS3JCTWYQ0EMQMHCRROTFP0H0KJ4GACIRZN&client_id=PGRM0YMX3I1VA31XHY2ALTXJUUDVRLW2EJX0V1W4SNU4PVD1&v=20170826&ll="+pos.lat+","+pos.lng+"&section=coffee&radius=1000&venuePhotos=1&limit=10";
+			xhttp.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					var response = JSON.parse(this.responseText);
+					parseResult(response.response.groups);
+				}
+			};
+			xhttp.open("GET", uri, true);
+			xhttp.send();
+		}
+		function handleError(code){
+			switch (code) {
+				case 1: // Didn't allow location
+					document.getElementById('rezultati').innerHTML = '<div class="noLocation"><h1>You must enable location for this app to work.</h1></div>';
+					setTimeout( function(){ var overlay = document.getElementById('overlay'); overlay.parentNode.removeChild(overlay); }, 500);// removes prelaoder
+					break;
+				case 2: // Broswer can't locate
+					alert("Your browser doesn't allow location services, try with other browser");
+					break;
+				default:
+					document.getElementById('rezultati').innerHTML = '<div class="noLocation"><h1>You must enable location for this app to work.</h1></div>';
+					setTimeout( function(){ var overlay = document.getElementById('overlay'); overlay.parentNode.removeChild(overlay); }, 500);// removes prelaoder
+					break;
+				}
+			}
+function parseResult(result){
+// goes per group
+	for(var i=0;i<result.length;i++){
+		template(result[i]);
+	}
+}
+function template(groupData){
+	var type = groupData.type;
+	var data = groupData.items;
+
+	for (var i=0;i<data.length;i++) {
+		var venue = data[i].venue;
+		var venueName = venue.name;
+		var venuePicture = venue.featuredPhotos.items[0].prefix +"128"+ venue.featuredPhotos.items[0].suffix;
+		var venueDistance = venue.location.distance;
+		var venueAddress = venue.location.address;
+		var venueWorking = venue.hours == undefined ? true : venue.hours.isOpen;
+		var venuePriceRange = venue.price == undefined ? 'Unknown' : venue.price.message;
+		var venueId = venue.id;
+		var venuePriceCurrency = venue.price == undefined ? '$' : venue.price.currency;
+		if(venueWorking){
+			div.innerHTML += '<a href="venue.html?id='+venueId+'&distance='+venueDistance+'"><div class="rTable"><div class="rTableRow"><div class="rTableCell VenueName"><p>'+venueName+'</p><img src="'+venuePicture+'"></div><div class="rTableCell"><p>&nbsp;</p><i class="fa fa-address-card" aria-hidden="true"></i> '+venueAddress+'</div><div class="rTableCell"><p>&nbsp;</p>'+venuePriceCurrency+' '+venuePriceRange+' </div><div class="rTableCell"><p>&nbsp;</p><i class="fa fa-dot-circle-o" aria-hidden="true"></i> '+venueDistance+'m</div></div></div></a>';
+		}
+	}
+	setTimeout( function(){ var overlay = document.getElementById('overlay'); overlay.parentNode.removeChild(overlay); }, 500);// removes prelaoder
+}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUd-gHVePwd5FHcYGFq0yBf8C4i7LXZ60&callback=initMap"></script>
+</body>
+</html>
